@@ -1,0 +1,17 @@
+Tilemap
+=======
+
+Types: 4bits, 8bits
+Array of uint16_t
+
+Bitmasks:
+Index = 0x3FF
+FlipX = 0x400
+FlipY = 0x800
+
+4bits has a palette field: (u >> 12) & 0xF
+
+Tileset
+=======
+
+

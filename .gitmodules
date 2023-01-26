@@ -1,0 +1,6 @@
+[submodule "libs/plog"]
+	path = libs/plog
+	url = https://github.com/SergiusTheBest/plog
+[submodule "libs/nfd"]
+	path = libs/nfd
+	url = https://github.com/btzy/nativefiledialog-extended
