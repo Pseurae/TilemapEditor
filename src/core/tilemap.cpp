@@ -14,6 +14,7 @@ enum Mask : short
 Tilemap::Tilemap(int width, int height) : m_Width(width), m_Height(height)
 {
     m_Tiles.resize(m_Width * m_Height, { 0, 0, false, false });
+    m_IsLoaded = true;
 }
 
 Tilemap::Tilemap(const fs::path &path, TilemapFormat format)

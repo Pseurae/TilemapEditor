@@ -1,4 +1,4 @@
-#include "helpers/init.h"
+#include "helpers/registry.h"
 #include "helpers/events.h"
 #include "helpers/fs.h"
 #include "helpers/hotkeys.h"
@@ -6,13 +6,17 @@
 #include "core/tilemap.h"
 
 #include <GLFW/glfw3.h>
+#include <functional>
 #include <imgui.h>
 
 static const fs::DialogFilter s_TilemapFilters = { { "Tilemaps", "bin" } };
 static const fs::DialogFilter s_TilesetFilters = { { "Tilesets", "png" } };
-static fs::path s_CachedPath;
 
-void OpenFile()
+static fs::path s_CachedPath;
+static std::function<void()> s_YesCallback, s_NoCallback;
+static std::string s_Message;
+
+static inline void OpenFile()
 {
     fs::OpenFileDialog(fs::DialogMode::Open, s_TilemapFilters, [](fs::path path) {
         EventManager::publish<RequestOpenTilemap>(path);
@@ -21,6 +25,23 @@ void OpenFile()
 
 void RegisterEvents()
 {
+    EventManager::subscribe<RequestNewTilemap>([](int width, int height) {
+        Context::NewTilemap(width, height);
+    });
+
+    EventManager::subscribe<RequestNewTilemapWindow>([]() {
+        if (Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
+        {
+            s_Message = "File has unsaved changes.\n Do you want to continue?";
+            s_YesCallback = [](){ EventManager::publish<RequestOpenPopup>("NewTilemapOptions"); };
+            EventManager::publish<RequestOpenPopup>("Prompt");
+        }
+        else 
+        {
+            EventManager::publish<RequestOpenPopup>("NewTilemapOptions");
+        }
+    });
+
     EventManager::subscribe<RequestOpenTilemap>([](const fs::path &path) {
         s_CachedPath = path;
         EventManager::publish<RequestOpenPopup>("OpenTilemapOptions");
@@ -28,9 +49,15 @@ void RegisterEvents()
 
     EventManager::subscribe<RequestOpenTilemapWindow>([]() {
         if (Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
-            EventManager::publish<RequestOpenPopup>("UnsavedChanges");
+        {
+            s_Message = "File has unsaved changes.\nDo you want to continue?";
+            s_YesCallback = OpenFile;
+            EventManager::publish<RequestOpenPopup>("Prompt");
+        }
         else
+        {
             OpenFile();
+        }
     });
 
     EventManager::subscribe<RequestOpenTileset>([](const fs::path &path) {
@@ -55,12 +82,27 @@ void RegisterEvents()
     EventManager::subscribe<RequestOpenPopup>([](const char *name) {
         Context::AppendPopup(name);
     });
+
+    EventManager::subscribe<RequestUndo>([]() {
+        if (Context::CanUndo())
+            Context::Undo();
+    });
+
+    EventManager::subscribe<RequestRedo>([]() {
+        if (Context::CanRedo())
+            Context::Redo();
+    });
+
 }
 
 void RegisterHotKeys()
 {
     HotKeyManager::AddHotKey(GLFW_MOD_CONTROL, GLFW_KEY_O, []() {
         EventManager::publish<RequestOpenTilemapWindow>();
+    });
+
+    HotKeyManager::AddHotKey(GLFW_MOD_CONTROL | GLFW_MOD_SHIFT, GLFW_KEY_O, []() {
+        EventManager::publish<RequestOpenTilesetWindow>();
     });
 
     HotKeyManager::AddHotKey(GLFW_MOD_CONTROL, GLFW_KEY_S, []() {
@@ -74,26 +116,34 @@ void RegisterHotKeys()
     HotKeyManager::AddHotKey(GLFW_MOD_CONTROL, GLFW_KEY_Q, []() {
         EventManager::publish<RequestProgramQuit>(true);
     });
+
+    HotKeyManager::AddHotKey(GLFW_MOD_CONTROL, GLFW_KEY_Z, []() {
+        EventManager::publish<RequestUndo>();
+    });
+
+    HotKeyManager::AddHotKey(GLFW_MOD_CONTROL, GLFW_KEY_Y, []() {
+        EventManager::publish<RequestRedo>();
+    });
 }
 
 static constexpr ImGuiWindowFlags s_PopupFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize;
 
 void DrawPopups()
 {
-    if (ImGui::BeginPopupModal("UnsavedChanges", NULL, s_PopupFlags))
+    if (ImGui::BeginPopupModal("Prompt", NULL, s_PopupFlags))
     {
-        ImGui::Text("This file has unsaved changes!");
-        ImGui::Text("Do you want to continue?");
+        ImGui::Text("%s", s_Message.c_str());
 
         if (ImGui::Button("Yes"))
         {
+            s_YesCallback();
             ImGui::CloseCurrentPopup();
-            OpenFile();
         }
 
         ImGui::SameLine();
         if (ImGui::Button("No"))
         {
+            s_NoCallback();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -146,6 +196,16 @@ void DrawPopups()
 
         if (ImGui::Button("Cancel"))
         {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("NewTilemapOptions", NULL, s_PopupFlags))
+    {
+        if (ImGui::Button("Ok"))
+        {
+            EventManager::publish<RequestNewTilemap>(32, 32);
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

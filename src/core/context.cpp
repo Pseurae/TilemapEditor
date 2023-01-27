@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sys/types.h>
+#include "core/actions.h"
 
 Tilemap *Context::m_Tilemap = nullptr;
 Tileset *Context::m_Tileset = nullptr;
@@ -17,6 +18,19 @@ fs::path Context::m_TilemapPath;
 fs::path Context::m_TilesetPath;
 std::list<const char *> Context::m_PopupsToOpen;
 Brush Context::m_Brush;
+bool Context::m_ShowTilemapGrid;
+bool Context::m_ShowTilesetGrid;
+ActionList Context::m_UndoStack;
+ActionList Context::m_RedoStack;
+
+bool Context::NewTilemap(int width, int height)
+{
+    if (m_Tilemap)
+        delete m_Tilemap;
+
+    m_Tilemap = new Tilemap(width, height);
+    return true;
+}
 
 bool Context::OpenTilemap(const fs::path &path, TilemapFormat format)
 {
@@ -100,22 +114,60 @@ void Context::ProcessPopups()
     });
 }
 
+void Context::Undo()
+{
+    std::shared_ptr<Action> action = m_UndoStack.front();
+    action->undo();
+    m_UndoStack.pop_front();
+    m_RedoStack.push_front(action);
+}
+
+void Context::Redo()
+{
+    std::shared_ptr<Action> action = m_RedoStack.front();
+    action->redo();
+    m_RedoStack.pop_front();
+    m_UndoStack.push_front(action);
+}
+
+void Context::LogAction(Action *action)
+{
+    std::shared_ptr<Action> ptr(action);
+    m_UndoStack.push_front(ptr);
+    m_RedoStack.clear();
+}
+
 MenuBar Context::m_MenuBar = {
     {"File", []() {
+        if (ImGui::MenuItem("New", "Ctrl + N"))
+            EventManager::publish<RequestNewTilemapWindow>();
+
         if (ImGui::MenuItem("Open", "Ctrl + O"))
             EventManager::publish<RequestOpenTilemapWindow>();
+
         if (ImGui::MenuItem("Save", "Ctrl + S"))
-            EventManager::publish<RequestSaveTilemap>(false);
+            EventManager::publish<RequestSaveTilemap>(Context::GetTilemapPath().empty());
+
         if (ImGui::MenuItem("Save As", "Ctrl + Shift + S"))
             EventManager::publish<RequestSaveTilemap>(true);
+
         if (ImGui::MenuItem("Quit", "Ctrl + Q"))
             EventManager::publish<RequestProgramQuit>(true);
     }},
     {"Edit", []() {
-        if (ImGui::MenuItem("Undo", "Ctrl + Z"))
-        {}
-        if (ImGui::MenuItem("Redo", "Ctrl + Shift + Z"))
-        {}
+        if (ImGui::MenuItem("Undo", "Ctrl + Z", false, Context::CanUndo()))
+            EventManager::publish<RequestUndo>();
+
+        if (ImGui::MenuItem("Redo", "Ctrl + Y", false, Context::CanRedo()))
+            EventManager::publish<RequestRedo>();
+    }},
+    {"View", []() {
+        if (ImGui::BeginMenu("Grids"))
+        {
+            ImGui::MenuItem("Tilemap", NULL, &Context::ShouldShowTMGrid());
+            ImGui::MenuItem("Tileset", NULL, &Context::ShouldShowTSGrid());
+            ImGui::EndMenu();
+        }
     }},
     {"Tileset", []() {
         if (ImGui::MenuItem("Import Tileset", "Ctrl + Shift + O"))

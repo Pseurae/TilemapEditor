@@ -81,6 +81,8 @@ private:
         explicit name(CallbackFn fn) : EventFn(fn) {} \
     }
 
+EVENT_DEF(RequestNewTilemap, int, int);
+EVENT_DEF(RequestNewTilemapWindow);
 EVENT_DEF(RequestOpenTilemap, const fs::path &);
 EVENT_DEF(RequestOpenTilemapWindow);
 EVENT_DEF(RequestOpenTileset, const fs::path &);
@@ -88,4 +90,5 @@ EVENT_DEF(RequestOpenTilesetWindow);
 EVENT_DEF(RequestSaveTilemap, bool);
 EVENT_DEF(RequestOpenPopup, const char *);
 EVENT_DEF(RequestProgramQuit, bool);
-
+EVENT_DEF(RequestUndo);
+EVENT_DEF(RequestRedo);

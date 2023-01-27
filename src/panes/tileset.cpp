@@ -11,7 +11,42 @@
 
 static constexpr int s_TilePerRow = 7;
 
-static bool GridImageSelector(Tileset *tileset, bool shouldDrawGrid)
+void TilesetPane::Draw()
+{
+    if (ImGui::BeginChild("Tileset", ImVec2(270.0f, 0.0f), true))
+    {
+        Tileset *tileset = Context::GetTileset();
+
+        ImGui::Spacing();
+
+        if (tileset && tileset->IsLoaded())
+        {
+            Brush &brush = Context::GetBrush();
+            ImGui::Text("Tile ID: %i", brush.selected_tile);
+            ImGui::Checkbox("Tile X Flip", &brush.xflip);
+            ImGui::Checkbox("Tile Y Flip", &brush.yflip);
+
+            ImGui::Spacing();
+            int tilecount = tileset->GetWidth() * tileset->GetHeight();
+            ImGui::Text("Tile Count: %i (%i + 1)", tilecount, tilecount - 1);
+
+            ImGui::Spacing();
+
+            if (ImGui::BeginChild("###TilesetView", ImVec2(256.0f, 0.0f)))
+            {
+                this->TileSelector(tileset, Context::ShouldShowTSGrid());
+                ImGui::EndChild();
+            }
+        }
+        else
+        {
+            ImGui::Text("No tileset loaded.");
+        }
+        ImGui::EndChild();
+    }
+}
+
+bool TilesetPane::TileSelector(Tileset *tileset, bool shouldDrawGrid)
 {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     if (window->SkipItems)
@@ -51,46 +86,11 @@ static bool GridImageSelector(Tileset *tileset, bool shouldDrawGrid)
     window->DrawList->AddRect(pos - ImVec2(0.5f, 0.5f), pos + tilesize * scale + ImVec2(0.5f, 0.5f), IM_COL32(255, 0, 0, 255));
 
     if (!shouldDrawGrid)
-        window->DrawList->AddRect(bb.Min - ImVec2(0.5f, 0.5f), bb.Max + ImVec2(0.5f, 0.5f), IM_COL32_WHITE);
+        window->DrawList->AddRect(bb.Min - ImVec2(0.5f, 0.5f), bb.Max + ImVec2(0.5f, 0.5f), IM_COL32_BLACK);
 
     ImGui::ItemSize(bb);
     if (!ImGui::ItemAdd(bb, 0))
         return false;
 
     return true;
-}
-
-void TilesetPane::Draw()
-{
-    if (ImGui::BeginChild("Tileset", ImVec2(270.0f, 0.0f), true))
-    {
-        Tileset *tileset = Context::GetTileset();
-
-        ImGui::Spacing();
-
-        if (tileset && tileset->IsLoaded())
-        {
-            Brush &brush = Context::GetBrush();
-            ImGui::Text("Tile ID: %i", brush.selected_tile);
-            ImGui::Checkbox("Tile X Flip", &brush.xflip);
-            ImGui::Checkbox("Tile Y Flip", &brush.yflip);
-
-            ImGui::Spacing();
-            int tilecount = tileset->GetWidth() * tileset->GetHeight();
-            ImGui::Text("Tile Count: %i (%i + 1)", tilecount, tilecount - 1);
-
-            ImGui::Spacing();
-
-            if (ImGui::BeginChild("###TilesetView", ImVec2(256.0f, 0.0f)))
-            {
-                GridImageSelector(tileset, true);
-                ImGui::EndChild();
-            }
-        }
-        else
-        {
-            ImGui::Text("No tileset loaded.");
-        }
-        ImGui::EndChild();
-    }
 }

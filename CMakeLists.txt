@@ -20,6 +20,7 @@ add_subdirectory(libs)
 
 set(SRC_FILES
     src/main.cpp
+    src/core/actions.cpp
     src/core/context.cpp
     src/core/tilemap.cpp
     src/core/tileset.cpp
@@ -27,7 +28,7 @@ set(SRC_FILES
     src/helpers/events.cpp
     src/helpers/fs.cpp
     src/helpers/hotkeys.cpp
-    src/helpers/init.cpp
+    src/helpers/registry.cpp
     src/helpers/texture.cpp
     src/panes/tilemap.cpp
     src/panes/tileset.cpp

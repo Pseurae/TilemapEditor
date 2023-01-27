@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <vector>
 
-enum TilemapFormat
+enum TilemapFormat : char
 {
     BPP4,
     BPP8

@@ -22,7 +22,7 @@
 #include "core/pane.h"
 #include "panes/tilemap.h"
 #include "panes/tileset.h"
-#include "helpers/init.h"
+#include "helpers/registry.h"
 
 Window::Window(const std::string &title, int width, int height) : m_Title(title), m_Width(width), m_Height(height)
 {
