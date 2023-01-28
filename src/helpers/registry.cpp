@@ -30,7 +30,7 @@ void RegisterEvents()
     });
 
     EventManager::subscribe<RequestNewTilemapWindow>([]() {
-        if (Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
+        if (Context::IsDirty() && Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
         {
             s_Message = "File has unsaved changes.\n Do you want to continue?";
             s_YesCallback = [](){ EventManager::publish<RequestOpenPopup>("NewTilemapOptions"); };
@@ -47,8 +47,22 @@ void RegisterEvents()
         EventManager::publish<RequestOpenPopup>("OpenTilemapOptions");
     });
 
+    EventManager::subscribe<RequestOpenRecentTilemap>([](const fs::path &path) {
+        if (Context::IsDirty() && Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
+        {
+            s_Message = "File has unsaved changes.\nDo you want to continue?";
+            s_YesCallback = [path](){ EventManager::publish<RequestOpenTilemap>(path); };
+            EventManager::publish<RequestOpenPopup>("Prompt");
+        }
+        else
+        {
+            EventManager::publish<RequestOpenTilemap>(path);
+        }
+
+    });
+
     EventManager::subscribe<RequestOpenTilemapWindow>([]() {
-        if (Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
+        if (Context::IsDirty() && Context::GetTilemap() && Context::GetTilemap()->IsLoaded())
         {
             s_Message = "File has unsaved changes.\nDo you want to continue?";
             s_YesCallback = OpenFile;
@@ -136,14 +150,16 @@ void DrawPopups()
 
         if (ImGui::Button("Yes"))
         {
-            s_YesCallback();
+            if (s_YesCallback)
+                s_YesCallback();
             ImGui::CloseCurrentPopup();
         }
 
         ImGui::SameLine();
         if (ImGui::Button("No"))
         {
-            s_NoCallback();
+            if (s_NoCallback)
+                s_NoCallback();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -151,7 +167,10 @@ void DrawPopups()
 
     if (ImGui::BeginPopupModal("QuitMessage", NULL, s_PopupFlags))
     {
-        ImGui::Text("Do you want to quit?");
+        if (Context::IsDirty())
+            ImGui::Text("File has unsaved changes.\nDo you want to quit?");
+        else
+            ImGui::Text("Do you want to quit?");
         if (ImGui::Button("Yes"))
         {
             EventManager::publish<RequestProgramQuit>(false);

@@ -5,7 +5,11 @@
 #include "helpers/hotkeys.h"
 #include "helpers/logger.h"
 #include "imgui_internal.h"
+#include <cstdio>
 #include <functional>
+#include <string_view>
+#include <iostream>
+#include <format>
 
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h>
@@ -38,6 +42,7 @@ Window::Window(const std::string &title, int width, int height) : m_Title(title)
 
     RegisterEvents();
     RegisterHotKeys();
+    Context::DeserializeRecentPaths();
 }
 
 Window::~Window()
@@ -114,6 +119,11 @@ void Window::InitGLFW()
             EventManager::publish<RequestOpenTilemap>(path);
         else if (extension == "png")
             EventManager::publish<RequestOpenTileset>(path);
+    });
+
+    glfwSetWindowCloseCallback(m_Window, [](GLFWwindow *window) {
+        glfwSetWindowShouldClose(window, GLFW_FALSE);
+        EventManager::publish<RequestOpenPopup>("QuitMessage");
     });
 
     int win_w, win_h, fb_w, fb_h;
@@ -223,7 +233,9 @@ void Window::Frame()
         pane->Draw();
     }
 
-    HotKeyManager::ProcessHotKeys();
+    if (!ImGui::GetTopMostPopupModal())
+        HotKeyManager::ProcessHotKeys();
+
     HotKeyManager::ClearKeys();
 
     Context::ProcessPopups();

@@ -5,6 +5,7 @@
 #include "core/tileset.h"
 #include "helpers/fs.h"
 #include "helpers/texture.h"
+#include "helpers/logger.h"
 
 #include <imgui.h>
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -128,7 +129,9 @@ bool TilemapPane::TilemapEdit(Tilemap *tilemap, Tileset *tileset, bool shouldDra
                 }
                 else 
                 {
+                    Context::IsDirty() = true;
                     Context::LogAction(new PlaceTileAction(i, &tileentry, &brush));
+                    TS_LOG_INFO("Placed tile at %i (%u -> %u)", i, tileentry.index, brush.selected_tile);
                     tileentry.index = brush.selected_tile;
                     tileentry.xflip = brush.xflip;
                     tileentry.yflip = brush.yflip;

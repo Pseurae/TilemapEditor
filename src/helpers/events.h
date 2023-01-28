@@ -3,6 +3,7 @@
 #include "helpers/fs.h"
 #include <functional>
 #include <list>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -84,6 +85,7 @@ private:
 EVENT_DEF(RequestNewTilemap, int, int);
 EVENT_DEF(RequestNewTilemapWindow);
 EVENT_DEF(RequestOpenTilemap, const fs::path &);
+EVENT_DEF(RequestOpenRecentTilemap, const fs::path &);
 EVENT_DEF(RequestOpenTilemapWindow);
 EVENT_DEF(RequestOpenTileset, const fs::path &);
 EVENT_DEF(RequestOpenTilesetWindow);
@@ -92,3 +94,4 @@ EVENT_DEF(RequestOpenPopup, const char *);
 EVENT_DEF(RequestProgramQuit, bool);
 EVENT_DEF(RequestUndo);
 EVENT_DEF(RequestRedo);
+

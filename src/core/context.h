@@ -53,6 +53,10 @@ public:
     static bool CanRedo() { return !m_RedoStack.empty(); }
 
     static void LogAction(Action *action);
+    static void SerializeRecentPaths();
+    static void DeserializeRecentPaths();
+
+    static bool &IsDirty() { return m_DirtyFlag; }
 
 private:
     static Tilemap *m_Tilemap;
@@ -70,5 +74,8 @@ private:
 
     static ActionList m_UndoStack;
     static ActionList m_RedoStack;
+
+    static std::list<fs::path> m_RecentPaths;
+    static bool m_DirtyFlag;
 };
 
