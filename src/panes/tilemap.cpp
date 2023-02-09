@@ -117,8 +117,6 @@ bool TilemapPane::TilemapEdit(Tilemap *tilemap, Tileset *tileset, bool shouldDra
             bool hovered, held;
             bool pressed = ImGui::ButtonBehavior(bb_, window->GetIDFromRectangle(bb_), &hovered, &held, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiSelectableFlags_AllowItemOverlap);
 
-            printf("%i %i %i\n", hovered, held, pressed);
-
             if (hovered)
             {
                 has_hovered = true;
