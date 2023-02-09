@@ -99,7 +99,9 @@ bool TilemapPane::TilemapEdit(Tilemap *tilemap, Tileset *tileset, bool shouldDra
 
             ImVec2 pos = window->DC.CursorPos + ImVec2(0.5f, 0.5f) + ImVec2(x, y) * tilesize * scale;
 
-            ImVec2 uv0 = ImVec2(index % tileset->GetWidth(), index / tileset->GetWidth()) * tilesize / size;
+            int w = index % tileset->GetWidth();
+            int h = index / tileset->GetWidth();
+            ImVec2 uv0 = ImVec2(w, h) * tilesize / size;
             ImVec2 uv1 = uv0 + tilesize / size;
 
             if (xflip) swap_val(&uv0.x, &uv1.x);
@@ -107,11 +109,15 @@ bool TilemapPane::TilemapEdit(Tilemap *tilemap, Tileset *tileset, bool shouldDra
 
             window->DrawList->AddImage(tex_id, pos, pos + tilesize * scale, uv0, uv1);
             if (shouldDrawGrid)
+            {
                 window->DrawList->AddRect(pos - ImVec2(0.5f, 0.5f), pos + tilesize * scale + ImVec2(0.5f, 0.5f), IM_COL32_BLACK);
+            }
 
             ImRect bb_ = ImRect(pos, pos + tilesize * scale);
             bool hovered, held;
             bool pressed = ImGui::ButtonBehavior(bb_, window->GetIDFromRectangle(bb_), &hovered, &held, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiSelectableFlags_AllowItemOverlap);
+
+            printf("%i %i %i\n", hovered, held, pressed);
 
             if (hovered)
             {

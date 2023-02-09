@@ -8,15 +8,15 @@ namespace fs {
     bool OpenFileDialog(DialogMode mode, const DialogFilter &filters, std::function<void(path)> cb, const std::string &default_path)
     {
         NFD::Init();
-        nfdchar_t *p = NULL;
         nfdresult_t result;
+        NFD::UniquePath p;
 
         switch (mode) {
         case DialogMode::Open:
-            result = NFD_OpenDialog(&p, filters.data(), filters.size(), default_path.c_str());
+            result = NFD::OpenDialog(p, filters.data(), filters.size(), default_path.c_str());
             break;
         case DialogMode::Save:
-            result = NFD_SaveDialog(&p, filters.data(), filters.size(), default_path.c_str(), NULL);
+            result = NFD::SaveDialog(p, filters.data(), filters.size(), default_path.c_str(), NULL);
             break;
         default:
             return false;
@@ -24,8 +24,7 @@ namespace fs {
 
         if (result == NFD_OKAY)
         {
-            cb(p);
-            NFD_FreePath(p);
+            cb(p.get());
         }
         else if (result == NFD_ERROR)
         {
