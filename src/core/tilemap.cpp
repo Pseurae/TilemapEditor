@@ -1,4 +1,5 @@
 #include "core/tilemap.h"
+#include "core/context.h"
 #include "helpers/fs.h"
 #include "helpers/logger.h"
 #include <cstdio>
@@ -35,7 +36,7 @@ Tilemap::Tilemap(const fs::path &path, TilemapFormat format)
     for (int i = 0; i < size; i++)
     {
         fs.read(reinterpret_cast<char *>(&entry), 2);
-        if (format == TilemapFormat::BPP8)
+        if (format == TilemapFormat::BPP4)
             palette = (entry >> 12) & 0xF;
         else
             palette = 0;
@@ -47,6 +48,7 @@ Tilemap::Tilemap(const fs::path &path, TilemapFormat format)
             (entry & Mask::FlipY) == Mask::FlipY
         }; 
     }
+    Context::GetFormat() = format;
     m_IsLoaded = true;
 }
 
@@ -61,6 +63,7 @@ bool Tilemap::Save(const fs::path &path)
     {
         uint16_t data = (
             entry.index & Mask::Index |
+            ((entry.palette & 0xF) << 12) |
             (entry.xflip ? Mask::FlipX : 0) |
             (entry.yflip ? Mask::FlipY : 0)
         );

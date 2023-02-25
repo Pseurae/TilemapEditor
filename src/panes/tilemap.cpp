@@ -128,7 +128,8 @@ bool TilemapPane::TilemapEdit(Tilemap *tilemap, Tileset *tileset, bool shouldDra
                 if (ImGui::GetIO().MouseClicked[1])
                 {
                     brush.selected_tile = tileentry.index;
-                    brush.xflip = tileentry.xflip;;
+                    brush.palettenum = tileentry.palette;
+                    brush.xflip = tileentry.xflip;
                     brush.yflip = tileentry.yflip;
                 }
                 else 

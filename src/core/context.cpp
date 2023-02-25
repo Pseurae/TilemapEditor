@@ -18,8 +18,8 @@
 #include <vector>
 #include "core/actions.h"
 
-Tilemap *Context::m_Tilemap = nullptr;
-Tileset *Context::m_Tileset = nullptr;
+std::unique_ptr<Tilemap> Context::m_Tilemap = nullptr;
+std::unique_ptr<Tileset> Context::m_Tileset = nullptr;
 fs::path Context::m_TilemapPath;
 fs::path Context::m_TilesetPath;
 std::list<const char *> Context::m_PopupsToOpen;
@@ -30,13 +30,11 @@ ActionList Context::m_UndoStack;
 ActionList Context::m_RedoStack;
 std::list<fs::path> Context::m_RecentPaths;
 bool Context::m_DirtyFlag;
+TilemapFormat Context::m_LoadedFormat;
 
 bool Context::NewTilemap(int width, int height)
 {
-    if (m_Tilemap)
-        delete m_Tilemap;
-
-    m_Tilemap = new Tilemap(width, height);
+    m_Tilemap = std::make_unique<Tilemap>(width, height);
     return true;
 }
 
@@ -47,12 +45,9 @@ bool Context::OpenTilemap(const fs::path &path, TilemapFormat format)
     if (!temp->IsLoaded())
         return false;
 
-    if (m_Tilemap)
-        delete m_Tilemap;
-
     bool hasLoadedTilemap = (m_Tilemap && m_Tilemap->IsLoaded());
 
-    m_Tilemap = temp;
+    m_Tilemap = std::unique_ptr<Tilemap>(temp);
     m_TilemapPath = path;
     TS_LOG_INFO("Loaded tilemap from %s", path.c_str());
 
@@ -91,10 +86,7 @@ bool Context::OpenTileset(const fs::path &path)
     if (!temp->IsLoaded())
         return false;
 
-    if (m_Tileset)
-        delete m_Tileset;
-
-    m_Tileset = temp;
+    m_Tileset = std::unique_ptr<Tileset>(temp);
     m_TilesetPath = path;
     TS_LOG_INFO("Loaded tileset from %s", path.c_str());
     return true;
@@ -207,7 +199,7 @@ void Context::DeserializeRecentPaths()
     {
         stream >> path;
         if (fs::Exists(path))
-            m_RecentPaths.push_front(path);
+            m_RecentPaths.push_back(path);
     }
 }
 
@@ -226,6 +218,9 @@ MenuBar Context::m_MenuBar = {
                 if (ImGui::MenuItem(path.c_str()))
                     EventManager::publish<RequestOpenRecentTilemap>(path);
             }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Clear Recents"))
+                m_RecentPaths.clear();
             ImGui::EndMenu();
         }
 

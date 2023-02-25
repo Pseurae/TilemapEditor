@@ -1,5 +1,6 @@
 #include "panes/tileset.h"
 #include "core/context.h"
+#include "core/tilemap.h"
 #include "core/tileset.h"
 #include "helpers/fs.h"
 #include "helpers/texture.h"
@@ -25,6 +26,17 @@ void TilesetPane::Draw()
             ImGui::Text("Tile ID: %i", brush.selected_tile);
             ImGui::Checkbox("Tile X Flip", &brush.xflip);
             ImGui::Checkbox("Tile Y Flip", &brush.yflip);
+
+
+            if (Context::GetFormat() == TilemapFormat::BPP4)
+            {
+                int palettenum = brush.palettenum;
+
+                if (ImGui::InputInt("Palette Bank", &palettenum))
+                {
+                    brush.palettenum = std::min(std::max(0, palettenum), 15);
+                }
+            }
 
             ImGui::Spacing();
             int tilecount = tileset->GetWidth() * tileset->GetHeight();
@@ -65,7 +77,7 @@ bool TilesetPane::TileSelector(Tileset *tileset, bool shouldDrawGrid)
     for (int i = 0; i < tilesnum; i++)
     {
         int x = i % s_TilePerRow, y = i / s_TilePerRow;
-        ImVec2 uv0 = ImVec2(i % tileset->GetWidth(), i / tileset->GetWidth()) * tilesize / size;
+        ImVec2 uv0 = ImVec2(i % tileset->GetWidth(), static_cast<int>(i / tileset->GetWidth())) * tilesize / size;
         ImVec2 pos = window->DC.CursorPos + ImVec2(0.5f, 0.5f) + ImVec2(x, y) * tilesize * scale;
         window->DrawList->AddImage(tex_id, pos, pos + tilesize * scale, uv0, uv0 + tilesize / size);
         if (shouldDrawGrid)
@@ -79,10 +91,10 @@ bool TilesetPane::TileSelector(Tileset *tileset, bool shouldDrawGrid)
             brush.selected_tile = i;
     }
 
-    ImVec2 widgetsize = ImVec2(s_TilePerRow, tilesnum / s_TilePerRow + 1) * tilesize;
+    ImVec2 widgetsize = ImVec2(s_TilePerRow, static_cast<int>(tilesnum / s_TilePerRow + 1)) * tilesize;
     ImRect bb(window->DC.CursorPos, window->DC.CursorPos + widgetsize * scale + ImVec2(1.0f, 1.0f));
 
-    ImVec2 pos = window->DC.CursorPos + ImVec2(0.5f, 0.5f) + ImVec2(brush.selected_tile % s_TilePerRow, brush.selected_tile / s_TilePerRow) * tilesize * scale;
+    ImVec2 pos = window->DC.CursorPos + ImVec2(0.5f, 0.5f) + ImVec2(brush.selected_tile % s_TilePerRow, static_cast<int>(brush.selected_tile / s_TilePerRow)) * tilesize * scale;
     window->DrawList->AddRect(pos - ImVec2(0.5f, 0.5f), pos + tilesize * scale + ImVec2(0.5f, 0.5f), IM_COL32(255, 0, 0, 255));
 
     if (!shouldDrawGrid)
